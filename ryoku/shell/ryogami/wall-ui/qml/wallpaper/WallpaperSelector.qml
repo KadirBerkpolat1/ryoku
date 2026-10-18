@@ -1109,7 +1109,7 @@ Scope {
       onCountChanged: {
         console.log("[SLICE] onCountChanged count=", count, "visible=", visible, "contentX=", contentX, "contentWidth=", contentWidth)
         if (count > 0 && wallpaperSelector.showing && !wallpaperSelector._restorePending) {
-          currentIndex = Math.min(currentIndex, count - 1)
+          currentIndex = Math.max(0, Math.min(currentIndex, count - 1))
         }
       }
 
@@ -1141,12 +1141,14 @@ Scope {
       }
 
       Keys.onEscapePressed: wallpaperSelector.showing = false
-      Keys.onReturnPressed: {
+      function _applyCurrentIndex() {
         if (currentIndex >= 0 && wallpaperSelector._activeModel && currentIndex < wallpaperSelector._activeModel.count) {
           const item = wallpaperSelector._activeModel.get(currentIndex)
           wallpaperSelector._applyItem(item)
         }
       }
+      Keys.onReturnPressed: _applyCurrentIndex()
+      Keys.onSpacePressed: _applyCurrentIndex()
       Keys.onPressed: function(event) {
 
         if (event.modifiers & Qt.ShiftModifier) {
@@ -1542,19 +1544,20 @@ Scope {
 
       focus: wallpaperSelector.showing && wallpaperSelector.isGridMode
       onVisibleChanged: {
-        if (visible) forceActiveFocus()
+        if (visible) { forceActiveFocus(); if (currentIndex < 0) currentIndex = 0 }
       }
 
       Keys.onEscapePressed: {
         if (gridBackOverlay.overlayOpen) gridBackOverlay.hide()
         else wallpaperSelector.showing = false
       }
-      Keys.onReturnPressed: {
+      function _applyHoveredIndex() {
         if (hoveredIdx >= 0 && wallpaperSelector._activeModel && hoveredIdx < wallpaperSelector._activeModel.count) {
-          var item = wallpaperSelector._activeModel.get(hoveredIdx)
-          wallpaperSelector._applyItem(item)
+          wallpaperSelector._applyItem(wallpaperSelector._activeModel.get(hoveredIdx))
         }
       }
+      Keys.onReturnPressed: _applyHoveredIndex()
+      Keys.onSpacePressed: _applyHoveredIndex()
       property int hoveredIdx: currentIndex
 
       function _ensureVisible(idx) {
